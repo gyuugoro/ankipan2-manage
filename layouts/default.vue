@@ -5,3 +5,14 @@
     </div>
   </section>
 </template>
+
+<script>
+import { signInCheck } from '../firebase';
+
+export default {
+  created() {
+    signInCheck()
+  },
+}
+
+</script>

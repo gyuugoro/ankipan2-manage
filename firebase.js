@@ -1,9 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
 import { getPerformance } from "firebase/performance";
-import { collection, doc, getDoc, query, where, getDocs, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, orderBy, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
-import { getAuth } from "firebase/auth"
+import { collection, doc, getDoc, query, where, getDocs, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, orderBy } from "firebase/firestore";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "firebase/auth"
 
 const firebaseConfig = {
   apiKey: process.env.fb_api_key,
@@ -26,10 +25,24 @@ const db = initializeFirestore(app,
 const analytics = getAnalytics(app);
 // const db = getFirestore(app);
 const perf = getPerformance(app);
-// const auth = getAuth(app)
+const auth = getAuth(app)
 
+const signInCheck = () => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      console.log("サインイン id:" + user.uid)
+    } else {
+      console.log("匿名アカウントを作成")
+      await signInAnonymously(auth)
+    }
+  });
+}
 
-
+const onSignIn = (play) => {
+  onAuthStateChanged(auth, (user) => {
+    play(user)
+  })
+}
 
 const get_book_id = async (id) => {
 
@@ -43,7 +56,17 @@ const get_book_id = async (id) => {
   }
 }
 
+const get_mybooks = async () => {
+  const q = query(collection(db, "Books"), where("public", "==", true), where("creator", "==", auth.currentUser.uid), orderBy("now", "desc"));
+  const querySnapshot = await getDocs(q);
+
+  return querySnapshot
+
+}
+
 export {
   get_book_id,
-  get_all
+  get_mybooks,
+  signInCheck,
+  onSignIn
 }
